@@ -1,11 +1,23 @@
 # mine_sweeper_go
 
+![alt text](image.png)
+
 ## About this code
 
-This code is my Golan programming practice.
+This code is my Go lang programming practice.
 
-## CLI game
+## Dependency
+
+- [fyne](https://github.com/fyne-io/fyne)
+
+## Compilation
 
 ```bash
-go run .
+go build .
 ```
+
+## ToDo
+
+- [ ] Right click flag function
+- [ ] Fix Game Over dialog
+- [ ] Prevent sudden death

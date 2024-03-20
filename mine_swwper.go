@@ -169,9 +169,11 @@ func (gb GameBoard) BombOpen() {
 	for row := 1; row <= gb.SizeY; row++ {
 		for col := 1; col <= gb.SizeX; col++ {
 			p := gb.Field[row][col]
-			switch p.(type) {
-			case *BombPanel:
-				p.Open()
+			if !p.IsOpen() {
+				switch p.(type) {
+				case *BombPanel:
+					p.Open()
+				}
 			}
 		}
 	}
@@ -221,7 +223,7 @@ func (gb GameBoard) CuiGame() {
 	hit_any_key()
 }
 
-func main() {
-	gb := NewGameBoard(9, 9, 10)
-	gb.CuiGame()
-}
+// func main() {
+// 	gb := NewGameBoard(9, 9, 10)
+// 	gb.CuiGame()
+// }
