@@ -1,6 +1,6 @@
 # mine_sweeper_go
 
-![alt text](image.png)
+![GUI image](image.png)
 
 ## About this code
 
@@ -18,6 +18,6 @@ go build .
 
 ## ToDo
 
-- [ ] Right click flag function
+- [x] Right click flag function
 - [ ] Fix Game Over dialog
 - [ ] Prevent sudden death
