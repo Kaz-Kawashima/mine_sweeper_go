@@ -3,6 +3,16 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
+)
+
+type GameStatus int
+
+const (
+	Uninitialized GameStatus = iota
+	Playing
+	Win
+	Lose
 )
 
 type GameBoard struct {
@@ -11,6 +21,8 @@ type GameBoard struct {
 	SizeY      int
 	FieldSizeX int
 	FieldSizeY int
+	numBomb    int
+	Status     GameStatus
 }
 
 func NewGameBoard(y, x, numBomb int) GameBoard {
@@ -19,6 +31,13 @@ func NewGameBoard(y, x, numBomb int) GameBoard {
 	gb.SizeY = y
 	gb.FieldSizeX = x + 2
 	gb.FieldSizeY = y + 2
+	gb.InitField()
+	gb.numBomb = numBomb
+	gb.Status = Uninitialized
+	return gb
+}
+
+func (gb *GameBoard) InitField() {
 	//Fill Panel
 	for row := 0; row < gb.FieldSizeY; row++ {
 		var panel_row []PanelIf
@@ -36,16 +55,16 @@ func NewGameBoard(y, x, numBomb int) GameBoard {
 		gb.Field[0][col] = NewBoarderPanel()
 		gb.Field[gb.FieldSizeY-1][col] = NewBoarderPanel()
 	}
-	gb.SetBomb(numBomb)
-	gb.CalcBombValueGB()
-	return gb
 }
 
-func (gb GameBoard) SetBomb(num_bomb int) {
+func (gb *GameBoard) SetBomb(cursor_row, cursor_col int) {
 	counter := 0
-	for counter < num_bomb {
+	for counter < gb.numBomb {
 		row := rand.Intn(gb.SizeY-1) + 1
 		col := rand.Intn(gb.SizeX-1) + 1
+		if row == cursor_row && col == cursor_col {
+			continue
+		}
 		p := gb.Field[row][col]
 		switch p.(type) {
 		case *BombPanel:
@@ -55,21 +74,23 @@ func (gb GameBoard) SetBomb(num_bomb int) {
 			counter++
 		}
 	}
+	gb.CalcBombValues()
+	gb.Status = Playing
 }
 
-func (gb GameBoard) CalcBombValueGB() {
+func (gb *GameBoard) CalcBombValues() {
 	for row := 1; row <= gb.SizeY; row++ {
 		for col := 1; col <= gb.SizeX; col++ {
 			p := gb.Field[row][col]
 			switch p.(type) {
 			case *BlankPanel:
-				gb.CalcBombValue(row, col)
+				gb.CalcPanelBombValue(row, col)
 			}
 		}
 	}
 }
 
-func (gb GameBoard) CalcBombValue(y, x int) {
+func (gb *GameBoard) CalcPanelBombValue(y, x int) {
 	counter := 0
 	for row := y - 1; row <= (y + 1); row++ {
 		for col := x - 1; col <= (x + 1); col++ {
@@ -84,7 +105,33 @@ func (gb GameBoard) CalcBombValue(y, x int) {
 	p.BombValue = counter
 }
 
-func (gb GameBoard) Print() {
+func (gb *GameBoard) GetStatus() GameStatus {
+	if gb.Status == Uninitialized {
+		return Uninitialized
+	}
+	gb.Status = Win
+	for row := 1; row <= gb.SizeY; row++ {
+		for col := 1; col <= gb.SizeX; col++ {
+			p := gb.Field[row][col]
+			if !p.IsOpen() {
+				switch p.(type) {
+				case *BlankPanel:
+					gb.Status = Playing
+				}
+			}
+			if p.IsOpen() {
+				switch p.(type) {
+				case *BombPanel:
+					gb.Status = Lose
+					return Lose
+				}
+			}
+		}
+	}
+	return gb.Status
+}
+
+func (gb *GameBoard) Print() {
 	buff := ""
 	for row := 0; row < gb.FieldSizeY; row++ {
 		for col := 0; col < gb.FieldSizeX; col++ {
@@ -97,7 +144,28 @@ func (gb GameBoard) Print() {
 	fmt.Println(buff)
 }
 
-func (gb GameBoard) UserInput() (int, int) {
+func (gb *GameBoard) PrintDebug() {
+	gb.Print()
+	buff := ""
+	for row := 0; row < gb.FieldSizeY; row++ {
+		for col := 0; col < gb.FieldSizeX; col++ {
+			p := gb.Field[row][col]
+			switch p.(type) {
+			case *BombPanel:
+				buff += "B"
+			case *BorderPanel:
+				buff += "="
+			case *BlankPanel:
+				buff += strconv.Itoa(p.(*BlankPanel).BombValue)
+			}
+			buff += " "
+		}
+		buff += "\n"
+	}
+	fmt.Println(buff)
+}
+
+func (gb *GameBoard) UserInput() (int, int) {
 	var x, y int
 	var finished bool
 	for !finished {
@@ -126,17 +194,25 @@ func (gb GameBoard) UserInput() (int, int) {
 	return y, x
 }
 
-func (gb GameBoard) Open(row, col int) OpenResult {
+func (gb *GameBoard) Open(row, col int) OpenResult {
+	if gb.Status == Uninitialized {
+		gb.SetBomb(row, col)
+	}
 	p := gb.Field[row][col]
-	return p.Open()
+	result := p.Open()
+	if result == safe {
+		gb.CascadeOpen()
+	}
+	gb.GetStatus()
+	return result
 }
 
-func (gb GameBoard) Flag(row, col int) {
+func (gb *GameBoard) Flag(row, col int) {
 	p := gb.Field[row][col]
 	p.Flag()
 }
 
-func (gb GameBoard) OpenAround(y, x int) int {
+func (gb *GameBoard) OpenAround(y, x int) int {
 	new_open := 0
 	for row := y - 1; row <= y+1; row++ {
 		for col := x - 1; col <= x+1; col++ {
@@ -150,7 +226,7 @@ func (gb GameBoard) OpenAround(y, x int) int {
 	return new_open
 }
 
-func (gb GameBoard) CascadeOpen() {
+func (gb *GameBoard) CascadeOpen() {
 	new_open := 1
 	for new_open > 0 {
 		new_open = 0
@@ -165,7 +241,7 @@ func (gb GameBoard) CascadeOpen() {
 	}
 }
 
-func (gb GameBoard) BombOpen() {
+func (gb *GameBoard) BombOpen() {
 	for row := 1; row <= gb.SizeY; row++ {
 		for col := 1; col <= gb.SizeX; col++ {
 			p := gb.Field[row][col]
@@ -179,7 +255,7 @@ func (gb GameBoard) BombOpen() {
 	}
 }
 
-func (gb GameBoard) IsFinished() bool {
+func (gb *GameBoard) IsFinished() bool {
 	for row := 1; row <= gb.SizeY; row++ {
 		for col := 1; col <= gb.SizeX; col++ {
 			p := gb.Field[row][col]
@@ -200,15 +276,13 @@ func hit_any_key() {
 	fmt.Scan(&x)
 }
 
-func (gb GameBoard) CuiGame() {
+func (gb *GameBoard) CuiGame() {
 	finished := false
 	for !finished {
 		gb.Print()
 		row, col := gb.UserInput()
 		result := gb.Open(row, col)
-		if result == safe {
-			gb.CascadeOpen()
-		} else {
+		if result != safe {
 			gb.BombOpen()
 			gb.Print()
 			println("Game Over!")

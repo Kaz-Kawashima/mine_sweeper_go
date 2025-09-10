@@ -35,9 +35,7 @@ func newBombPanelButton(row int, col int, gb *GameBoard, w fyne.Window) *BombPan
 
 func (b *BombPanelButton) Tapped(e *fyne.PointEvent) {
 	open_result := b.gb.Open(b.row, b.col)
-	if open_result == safe {
-		b.gb.CascadeOpen()
-	} else {
+	if open_result != safe {
 		b.gb.BombOpen()
 		dialog.ShowConfirm("", "Game Over!", ExitAnyway, b.window)
 	}

@@ -13,11 +13,11 @@ This code is my Go lang programming practice.
 ## Compilation
 
 ```bash
-go build .
+fyne build .
 ```
 
 ## ToDo
 
 - [x] Right click flag function
 - [ ] Fix Game Over dialog
-- [ ] Prevent sudden death
+- [x] Prevent sudden death
