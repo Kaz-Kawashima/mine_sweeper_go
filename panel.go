@@ -67,8 +67,9 @@ func (p *BlankPanel) Open() OpenResult {
 	return safe
 }
 
-func NewBombPanel() *BombPanel {
+func NewBombPanel(flag bool) *BombPanel {
 	var p BombPanel
+	p.isFlagged = flag
 	return &p
 }
 

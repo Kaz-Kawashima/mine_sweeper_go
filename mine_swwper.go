@@ -70,7 +70,8 @@ func (gb *GameBoard) SetBomb(cursor_row, cursor_col int) {
 		case *BombPanel:
 			continue
 		default:
-			gb.Field[row][col] = NewBombPanel()
+			flag := p.IsFlagged()
+			gb.Field[row][col] = NewBombPanel(flag)
 			counter++
 		}
 	}
@@ -217,7 +218,7 @@ func (gb *GameBoard) OpenAround(y, x int) int {
 	for row := y - 1; row <= y+1; row++ {
 		for col := x - 1; col <= x+1; col++ {
 			p := gb.Field[row][col]
-			if !p.IsOpen() {
+			if !p.IsOpen() && !p.IsFlagged() {
 				p.Open()
 				new_open++
 			}
